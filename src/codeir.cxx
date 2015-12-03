@@ -51,8 +51,7 @@ llvm::Value* basic::Function::code()
   auto _t0 = asType(rtype);
 
   std::vector<llvm::Type*> _t1;
-  for( auto& p : params ) 
-	_t1.push_back( asType(p.second) );
+  for( auto& p : params ) _t1.push_back( asType(p.second) );
 
   auto _t = llvm::FunctionType::get(_t0, llvm::ArrayRef<llvm::Type*>{_t1}, false);
   auto _f = llvm::Function::Create(_t, llvm::Function::InternalLinkage, name, curMod);
