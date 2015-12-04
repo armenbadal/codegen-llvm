@@ -8,8 +8,8 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/ValueSymbolTable.h>
 
-#include <map>
-#include <vector>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringMap.h>
 
 #include "ast.hxx"
 
@@ -21,7 +21,7 @@ namespace {
   llvm::Module* curMod = nullptr;
   llvm::Function* curFunc = nullptr;
 
-  std::map<std::string,llvm::Value*> curLocs;
+  llvm::StringMap<llvm::Value*> curLocs;
 }
 
 namespace {
@@ -53,41 +53,69 @@ llvm::Value* basic::Function::code()
 {
   auto _t0 = asType(rtype);
 
-  std::vector<llvm::Type*> _t1;
+  llvm::SmallVector<llvm::Type*,10> _t1;
   for( auto& p : params ) _t1.push_back( asType(p.second) );
 
-  auto _t = llvm::FunctionType::get(_t0, llvm::ArrayRef<llvm::Type*>{_t1}, false);
+  auto _t = llvm::FunctionType::get(_t0, _t1, false);
   auto _f = llvm::Function::Create(_t, llvm::Function::InternalLinkage, name, curMod);
   curFunc = _f;
-  curLoc.clear();
-
-  auto ip = _f->arg_begin();
-  for( auto& p : params ) {
-	ip->setName(p.first);
-	++ip;
-  }
+  curLocs.clear();
 
   auto _b0 = llvm::BasicBlock::Create(context, "start", _f);
   builder.SetInsertPoint(_b0);
+
+  auto& _st = _f->getValueSymbolTable();
+  auto ip = _f->arg_begin();
+  for( auto& p : params ) {
+	ip->setName(p.first);
+	auto _m = builder.CreateAlloca(ip->getType());
+	builder.CreateStore(_st.lookup(p.first), _m);
+	curLocs[p.first] = _m;
+	++ip;
+  }
 
   body->code();
 
   return _f;
 }
 
-llvm::Value* basic::Assignment::code()
+//
+llvm::Value* basic::Sequence::code()
 {
-  auto& _s = curFunc->getValueSymbolTable();
-  auto _v = _s.lookup(variable);
-  if( _v == nullptr )
-	_v = builder.CreateAlloca(asType("INTEGER"), nullptr, variable);
-
-  auto _e = value->code();
-  builder.CreateStore(_v, _e);
+  if( stato != nullptr ) stato->code();
+  if( stati != nullptr ) stati->code();
 
   return nullptr;
 }
 
+//
+llvm::Value* basic::Declare::code()
+{
+  auto _t = asType(type);
+  auto _m = builder.CreateAlloca(_t, nullptr, name);
+  curLocs[name] = _m;
+
+  return nullptr;
+}
+
+//
+llvm::Value* basic::Assign::code()
+{
+  auto _p = curLocs[variable];
+  auto _e = value->code();
+  builder.CreateStore(_e, _p);
+
+  return nullptr;
+}
+
+//
+llvm::Value* basic::Return::code()
+{
+  auto _r = expro->code();
+  return builder.CreateRet(_r);
+}
+
+//
 llvm::Value* basic::Constant::code()
 {
   if( "INTEGER" == type )
@@ -103,4 +131,9 @@ llvm::Value* basic::Constant::code()
   return builder.getInt32(0);
 }
 
+//
+llvm::Value* basic::Variable::code()
+{
+  return builder.CreateLoad(curLocs[name]);
+}
 

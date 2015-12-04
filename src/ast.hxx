@@ -54,16 +54,51 @@ namespace basic {
 	virtual ~Statement() {}
   };
 
+  // հրամանների հաջորդականություն
+  class Sequence : public Statement {
+  private:
+	Statement* stato = nullptr;
+	Statement* stati = nullptr;
+  public:
+	Sequence(Statement* so, Statement* si)
+	  : stato{so}, stati{si}
+	{}
+	llvm::Value* code();
+  };
+
+  // փոփոխականի հայտարարություն
+  class Declare : public Statement {
+  private:
+	std::string name;
+	std::string type;
+  public:
+	Declare(const std::string& n, const std::string& t)
+	  : name{n}, type{t}
+	{}
+	llvm::Value* code();
+  };
+
   class Expression; // արտահայտություն
   
   // վերագրման գործողություն
-  class Assignment : public Statement {
+  class Assign : public Statement {
   private:
 	std::string variable;
 	Expression* value;
   public:
-	Assignment(const std::string& r, Expression* l)
+	Assign(const std::string& r, Expression* l)
 	  : variable{r}, value{l}
+	{}
+	llvm::Value* code();
+  };
+
+  // ֆունկցիայից արժեքի վերադարձ
+  class Return : public Statement {
+  private:
+	Expression* expro = nullptr;
+  public:
+	Return(Expression* eo)
+	  : expro{eo}
 	{}
 	llvm::Value* code();
   };
@@ -93,10 +128,9 @@ namespace basic {
   class Variable : public Expression {
   private:
 	std::string name;
-	std::string type;
   public:
-	Variable(const std::string& n, const std::string& t)
-	  : name{n}, type{t}
+	Variable(const std::string& n)
+	  : name{n}
 	{}
 	llvm::Value* code();
   };
