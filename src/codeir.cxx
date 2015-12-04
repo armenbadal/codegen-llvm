@@ -8,6 +8,7 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/ValueSymbolTable.h>
 
+#include <map>
 #include <vector>
 
 #include "ast.hxx"
@@ -19,6 +20,8 @@ namespace {
 
   llvm::Module* curMod = nullptr;
   llvm::Function* curFunc = nullptr;
+
+  std::map<std::string,llvm::Value*> curLocs;
 }
 
 namespace {
@@ -56,6 +59,7 @@ llvm::Value* basic::Function::code()
   auto _t = llvm::FunctionType::get(_t0, llvm::ArrayRef<llvm::Type*>{_t1}, false);
   auto _f = llvm::Function::Create(_t, llvm::Function::InternalLinkage, name, curMod);
   curFunc = _f;
+  curLoc.clear();
 
   auto ip = _f->arg_begin();
   for( auto& p : params ) {
