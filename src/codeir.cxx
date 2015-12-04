@@ -38,7 +38,7 @@ namespace {
 }
 
 
-llvm::Module* basic::Module::code()
+llvm::Module* ast::Module::code()
 {
   auto _m = new llvm::Module{name, context};
   curMod = _m;
@@ -49,7 +49,7 @@ llvm::Module* basic::Module::code()
   return _m;
 }
 
-llvm::Value* basic::Function::code()
+llvm::Function* ast::Function::code()
 {
   auto _t0 = asType(rtype);
 
@@ -80,43 +80,107 @@ llvm::Value* basic::Function::code()
 }
 
 //
-llvm::Value* basic::Sequence::code()
+void ast::Sequence::code()
 {
-  if( stato != nullptr ) stato->code();
-  if( stati != nullptr ) stati->code();
-
-  return nullptr;
+  if( stato != nullptr )
+	stato->code();
+  if( stati != nullptr ) 
+	stati->code();
 }
 
 //
-llvm::Value* basic::Declare::code()
+void ast::Declare::code()
 {
   auto _t = asType(type);
   auto _m = builder.CreateAlloca(_t, nullptr, name);
   curLocs[name] = _m;
-
-  return nullptr;
 }
 
 //
-llvm::Value* basic::Assign::code()
+void ast::Assign::code()
 {
   auto _p = curLocs[variable];
   auto _e = value->code();
   builder.CreateStore(_e, _p);
+}
+
+//
+void ast::Return::code()
+{
+  auto _r = expro->code();
+  builder.CreateRet(_r);
+}
+
+//
+void ast::If::code()
+{
+  auto _c = cond->code();
+
+  auto _b0 = llvm::BasicBlock::Create(context, "b0", curFunc);
+  auto _b2 = llvm::BasicBlock::Create(context, "b2", curFunc);
+  auto _b1 = _b2;
+  if( selse != nullptr )
+	_b1 = llvm::BasicBlock::Create(context, "b1", curFunc, _b2);
+  //auto __p = builder.saveIP();
+  builder.CreateCondBr(_c, _b0, _b1);
+  
+  builder.SetInsertPoint(_b0);
+  sthen->code();
+  builder.CreateBr(_b2);
+
+  if( selse != nullptr ) {
+	builder.SetInsertPoint(_b1);
+	selse->code();
+	builder.CreateBr(_b2);
+  }
+
+  builder.SetInsertPoint(_b2);
+  //builder.restoreIP(__p);
+}
+
+// 
+llvm::Value* ast::Binary::code()
+{
+  auto _e0 = expro->code();
+  auto _e1 = expri->code();
+
+  if( "ADD" == oper )
+	return builder.CreateNSWAdd(_e0, _e1);
+  else if( "EQ" == oper )
+	return builder.CreateICmpEQ(_e0, _e1);
+  else if( "AND" == oper )
+	return builder.CreateAnd(_e0, _e1);
 
   return nullptr;
 }
 
 //
-llvm::Value* basic::Return::code()
+llvm::Value* ast::Unary::code()
 {
-  auto _r = expro->code();
-  return builder.CreateRet(_r);
+  auto _e = expr->code();
+
+  if( "NEG" == oper )
+	_e = builder.CreateNeg(_e);
+  else if( "NOT" == oper )
+	_e = builder.CreateNot(_e);
+
+  return _e;
 }
 
 //
-llvm::Value* basic::Constant::code()
+llvm::Value* ast::FunCall::code()
+{
+  auto _f = curMod->getFunction(func);
+
+  llvm::SmallVector<llvm::Value*,10> _a;
+  for( auto p : args ) 
+	_a.push_back(p->code());
+
+  return builder.CreateCall(_f, _a);
+}
+
+//
+llvm::Value* ast::Constant::code()
 {
   if( "INTEGER" == type )
 	return builder.getInt32(std::stoi(value, 0, 10));
@@ -132,7 +196,7 @@ llvm::Value* basic::Constant::code()
 }
 
 //
-llvm::Value* basic::Variable::code()
+llvm::Value* ast::Variable::code()
 {
   return builder.CreateLoad(curLocs[name]);
 }

@@ -2,14 +2,17 @@
 #ifndef AST_HXX
 #define AST_HXX
 
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-
 #include <utility>
 #include <string>
 #include <vector>
 
-namespace basic {
+namespace llvm {
+  class Module;
+  class Function;
+  class Value;
+}
+
+namespace ast {
   // այս զույգի առաջին տարրը սիմվոլի անունն է, իսկ 
   // երկրորդը ներդրված տիպի անունն է
   using Symbol = std::pair<std::string,std::string>;
@@ -39,18 +42,18 @@ namespace basic {
 	std::string name;
 	std::vector<Symbol> params;
 	std::string rtype;
-	Statement* body;
+	Statement* body = nullptr;
   public:
 	Function(const std::string& n, const std::vector<Symbol>& p, const std::string& r, Statement* b)
 	  : name{n}, params{p}, rtype{r}, body{b}
 	{}
-	llvm::Value* code();
+	llvm::Function* code();
   };
   
-  //
+  // հրամաններ ինտերֆեյս
   class Statement {
   public:
-	virtual llvm::Value* code() = 0;
+	virtual void code() = 0;
 	virtual ~Statement() {}
   };
 
@@ -63,7 +66,7 @@ namespace basic {
 	Sequence(Statement* so, Statement* si)
 	  : stato{so}, stati{si}
 	{}
-	llvm::Value* code();
+	void code();
   };
 
   // փոփոխականի հայտարարություն
@@ -75,11 +78,24 @@ namespace basic {
 	Declare(const std::string& n, const std::string& t)
 	  : name{n}, type{t}
 	{}
-	llvm::Value* code();
+	void code();
   };
 
   class Expression; // արտահայտություն
   
+  // ճյուղավորման հրաման
+  class If : public Statement {
+  private:
+	Expression* cond = nullptr;
+	Statement* sthen = nullptr;
+	Statement* selse = nullptr;
+  public:
+	If(Expression* c, Statement* t, Statement* e)
+	  : cond{c}, sthen{t}, selse{e}
+	{}
+	void code();
+  };
+
   // վերագրման գործողություն
   class Assign : public Statement {
   private:
@@ -89,7 +105,7 @@ namespace basic {
 	Assign(const std::string& r, Expression* l)
 	  : variable{r}, value{l}
 	{}
-	llvm::Value* code();
+	void code();
   };
 
   // ֆունկցիայից արժեքի վերադարձ
@@ -100,7 +116,7 @@ namespace basic {
 	Return(Expression* eo)
 	  : expro{eo}
 	{}
-	llvm::Value* code();
+	void code();
   };
 
   // ․․․ այլ հրամաններ
@@ -110,6 +126,43 @@ namespace basic {
   public:
 	virtual llvm::Value* code() = 0;
 	virtual ~Expression() {}
+  };
+
+  // բինար գործողություն
+  class Binary : public Expression {
+  private:
+	std::string oper;
+	Expression* expro;
+	Expression* expri;
+  public:
+	Binary(const std::string& o, Expression* eo, Expression* ei)
+	  : oper{o}, expro{eo}, expri{ei}
+	{}
+	llvm::Value* code();
+  };
+
+  // ունար գործողություն
+  class Unary : public Expression {
+  private:
+	std::string oper;
+	Expression* expr;
+  public:
+	Unary(const std::string& o, Expression* e)
+	  : oper{o}, expr{e}
+	{}
+	llvm::Value* code();
+  };
+
+  // ֆունկցիայի կանչ
+  class FunCall : public Expression {
+  private:
+	std::string func;
+	std::vector<Expression*> args;
+  public:
+	FunCall(const std::string& f, const std::vector<Expression*>& a)
+	  : func{f}, args{a}
+	{}
+	llvm::Value* code();
   };
 
   // հաստատուն 
