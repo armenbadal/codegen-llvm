@@ -22,6 +22,16 @@ namespace {
   llvm::Function* curFunc = nullptr;
 
   llvm::StringMap<llvm::Value*> curLocs;
+
+  void PlaceBlock( llvm::BasicBlock* bl )
+  {
+	builder.ClearInsertionPoint();
+	auto _ib = builder.GetInsertBlock();
+	if( nullptr != _ib && nullptr != _ib->getParent() )
+	  curFunc->getBasicBlockList().insertAfter(_ib, bl);
+	else
+	  curFunc->getBasicBlockList().push_back(bl);
+  }
 }
 
 namespace {
@@ -76,6 +86,9 @@ llvm::Function* ast::Function::code()
 
   body->code();
 
+  if( _f->getReturnType()->isVoidTy() )
+	builder.CreateRetVoid();
+
   return _f;
 }
 
@@ -114,28 +127,71 @@ void ast::Return::code()
 //
 void ast::If::code()
 {
+  // պայման
   auto _c = cond->code();
 
-  auto _b0 = llvm::BasicBlock::Create(context, "b0", curFunc);
-  auto _b2 = llvm::BasicBlock::Create(context, "b2", curFunc);
+  auto _b0 = llvm::BasicBlock::Create(context, "", curFunc);
+  auto _b2 = llvm::BasicBlock::Create(context, "", curFunc);
   auto _b1 = _b2;
   if( selse != nullptr )
-	_b1 = llvm::BasicBlock::Create(context, "b1", curFunc, _b2);
-  //auto __p = builder.saveIP();
+	_b1 = llvm::BasicBlock::Create(context, "", curFunc, _b2);
+
+  // ճյուղավորում
   builder.CreateCondBr(_c, _b0, _b1);
   
+  // then ճյուղ
+  PlaceBlock(_b0);
   builder.SetInsertPoint(_b0);
   sthen->code();
   builder.CreateBr(_b2);
 
+  // else ճյուղ
   if( selse != nullptr ) {
+	PlaceBlock(_b1);
 	builder.SetInsertPoint(_b1);
 	selse->code();
 	builder.CreateBr(_b2);
   }
 
+  // շարունակություն
+  PlaceBlock(_b2);
   builder.SetInsertPoint(_b2);
-  //builder.restoreIP(__p);
+}
+
+//
+void ast::While::code()
+{
+  auto _b0 = llvm::BasicBlock::Create(context, "", curFunc);
+  auto _b1 = llvm::BasicBlock::Create(context, "", curFunc);
+  auto _b2 = llvm::BasicBlock::Create(context, "", curFunc);
+
+  builder.CreateBr(_b0);
+
+  // պայման
+  PlaceBlock(_b0);
+  builder.SetInsertPoint(_b0);
+  auto _c = cond->code();
+  builder.CreateCondBr(_c, _b1, _b2);
+
+  // մարմին
+  PlaceBlock(_b1);
+  builder.SetInsertPoint(_b1);
+  body->code();
+  builder.CreateBr(_b0);
+
+  // շարունակություն
+  PlaceBlock(_b2);
+  builder.SetInsertPoint(_b2);
+}
+
+//
+void ast::For::code()
+{
+}
+
+//
+void ast::Print::code()
+{
 }
 
 // 

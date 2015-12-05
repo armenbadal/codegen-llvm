@@ -82,19 +82,6 @@ namespace ast {
   };
 
   class Expression; // արտահայտություն
-  
-  // ճյուղավորման հրաման
-  class If : public Statement {
-  private:
-	Expression* cond = nullptr;
-	Statement* sthen = nullptr;
-	Statement* selse = nullptr;
-  public:
-	If(Expression* c, Statement* t, Statement* e)
-	  : cond{c}, sthen{t}, selse{e}
-	{}
-	void code();
-  };
 
   // վերագրման գործողություն
   class Assign : public Statement {
@@ -115,6 +102,57 @@ namespace ast {
   public:
 	Return(Expression* eo)
 	  : expro{eo}
+	{}
+	void code();
+  };
+  
+  // ճյուղավորման հրաման
+  class If : public Statement {
+  private:
+	Expression* cond = nullptr;
+	Statement* sthen = nullptr;
+	Statement* selse = nullptr;
+  public:
+	If(Expression* c, Statement* t, Statement* e)
+	  : cond{c}, sthen{t}, selse{e}
+	{}
+	void code();
+  };
+
+  // նախապայմանով կրկնման հրաման
+  class While : public Statement {
+  private:
+	Expression* cond = nullptr;
+	Statement* body = nullptr;
+  public:
+	While(Expression* c, Statement* b)
+	  : cond{c}, body{b}
+	{}
+	void code();
+  };
+
+  // պարամետրով կրկնման ցիկլ
+  class For : public Statement {
+  private:
+	std::string par; // պարամետր
+	Expression* start = nullptr; // սկզբնական արժեք
+	Expression* end = nullptr; // վերջնական արժեք
+	Expression* step = nullptr; // արժեքի քայլ
+	Statement* body = nullptr; // ցիկլի մարմին
+  public:
+	For(const std::string& p, Expression* i, Expression* e, Expression* s, Statement* b)
+	  : par{p}, start{i}, end{e}, step{s}, body{b}
+	{}
+	void code();
+  };
+
+  // արտածման հրաման
+  class Print : public Statement {
+  private:
+	std::vector<Expression*> exprs;
+  public:
+	Print(const std::vector<Expression*>& es)
+	  : exprs{es}
 	{}
 	void code();
   };

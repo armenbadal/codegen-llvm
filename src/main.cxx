@@ -24,11 +24,23 @@ int main()
   // mod->addFunction(f1);
 
   
-  auto e0 = new ast::Binary{"AND", new ast::Variable{"a"}, new ast::Variable{"b"}};
+  // auto e0 = new ast::Binary{"AND", new ast::Variable{"a"}, new ast::Variable{"b"}};
+  // auto s0 = new ast::Declare{"c", "INTEGER"};
+  // auto s1 = new ast::Assign{"c", new ast::Constant{"INTEGER", "777"}};
+  // auto s2 = new ast::Assign{"c", new ast::Constant{"INTEGER", "444"}};
+  // auto s3 = new ast::If{e0, s1, s2};
+  // auto s5 = new ast::If{e0, s3, nullptr};
+  // auto s4 = new ast::Sequence{s0, s5};
+  // auto f0 = new ast::Function{"f", {{"a", "BOOLEAN"}, {"b", "BOOLEAN"}}, "VOID", s4};
+  // mod->addFunction(f0);
+
+  
+  auto a0 = new ast::Unary{"NOT", new ast::Variable{"a"}};
   auto s0 = new ast::Declare{"c", "INTEGER"};
-  auto s1 = new ast::Assign{"c", new ast::Constant{"INTEGER", "777"}};
-  auto s2 = new ast::Assign{"c", new ast::Constant{"INTEGER", "444"}};
-  auto s3 = new ast::If{e0, s1, s2};
+  auto s1 = new ast::Assign{"c", new ast::Constant{"INTEGER", "88"}};
+  auto s2 = new ast::While{a0, s1};
+  auto a1 = new ast::Unary{"NOT", new ast::Variable{"b"}};
+  auto s3 = new ast::While{a1, s2};
   auto s4 = new ast::Sequence{s0, s3};
   auto f0 = new ast::Function{"f", {{"a", "BOOLEAN"}, {"b", "BOOLEAN"}}, "VOID", s4};
   mod->addFunction(f0);
