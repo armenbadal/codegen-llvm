@@ -13,6 +13,12 @@ namespace llvm {
 }
 
 namespace ast {
+  // enum class TypeID : char {
+  // 	Void,
+  // 	Integer,
+  // 	Boolean
+  // };
+
   // այս զույգի առաջին տարրը սիմվոլի անունն է, իսկ 
   // երկրորդը ներդրված տիպի անունն է
   using Symbol = std::pair<std::string,std::string>;
@@ -170,8 +176,8 @@ namespace ast {
   class Binary : public Expression {
   private:
 	std::string oper;
-	Expression* expro;
-	Expression* expri;
+	Expression* expro = nullptr;
+	Expression* expri = nullptr;
   public:
 	Binary(const std::string& o, Expression* eo, Expression* ei)
 	  : oper{o}, expro{eo}, expri{ei}
@@ -183,7 +189,7 @@ namespace ast {
   class Unary : public Expression {
   private:
 	std::string oper;
-	Expression* expr;
+	Expression* expr = nullptr;
   public:
 	Unary(const std::string& o, Expression* e)
 	  : oper{o}, expr{e}

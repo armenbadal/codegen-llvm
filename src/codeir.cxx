@@ -187,6 +187,7 @@ void ast::While::code()
 //
 void ast::For::code()
 {
+  (void)start;(void)end;(void)step;(void)body;
 }
 
 //
@@ -202,9 +203,11 @@ llvm::Value* ast::Binary::code()
 
   if( "ADD" == oper )
 	return builder.CreateNSWAdd(_e0, _e1);
-  else if( "EQ" == oper )
+
+  if( "EQ" == oper )
 	return builder.CreateICmpEQ(_e0, _e1);
-  else if( "AND" == oper )
+  
+  if( "AND" == oper )
 	return builder.CreateAnd(_e0, _e1);
 
   return nullptr;
