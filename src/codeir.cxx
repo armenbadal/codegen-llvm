@@ -193,6 +193,12 @@ void ast::For::code()
 //
 void ast::Print::code()
 {
+  //
+}
+
+//
+void ast::Input::code()
+{
 }
 
 // 

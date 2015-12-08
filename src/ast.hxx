@@ -163,6 +163,16 @@ namespace ast {
 	void code();
   };
 
+  // ներմուծման հրաման
+  class Input : public Statement {
+  private:
+	std::string variable;
+  public:
+	Input(const std::string& v)
+	  : variable{v}
+	{}
+	void code();
+  };
   // ․․․ այլ հրամաններ
 
   // արտահայտություն
