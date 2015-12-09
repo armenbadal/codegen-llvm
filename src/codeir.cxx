@@ -11,6 +11,10 @@
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 
+#include <algorithm>
+#include <tuple>
+#include <vector>
+
 #include "ast.hxx"
 
 namespace {
@@ -58,15 +62,18 @@ llvm::Module* ast::Module::code()
   curMod = _m;
 
   // ներդրված ֆունկցիաների հայտարարություններ 
-  // TODO հետագայում ձևափոխել
-  auto _t = llvm::FunctionType::get(vo_t, {i32_t}, false);
-  llvm::Function::Create(_t, llvm::Function::ExternalLinkage, "printInteger", _m);
-  _t = llvm::FunctionType::get(vo_t, {i1_t}, false);
-  llvm::Function::Create(_t, llvm::Function::ExternalLinkage, "printBoolean", _m);
-  _t = llvm::FunctionType::get(i32_t, {}, false);
-  llvm::Function::Create(_t, llvm::Function::ExternalLinkage, "inputInteger", _m);
-  _t = llvm::FunctionType::get(i1_t, {}, false);
-  llvm::Function::Create(_t, llvm::Function::ExternalLinkage, "inputBoolean", _m);
+  using signature_t = std::tuple<std::string,llvm::Type*,llvm::ArrayRef<llvm::Type*>>;
+  auto declarator_f = [&](signature_t s) {
+	auto _t = llvm::FunctionType::get(std::get<1>(s), std::get<2>(s), false);
+	llvm::Function::Create(_t, llvm::Function::ExternalLinkage, std::get<0>(s), _m);
+  };	
+  llvm::SmallVector<signature_t,16> internals{
+	signature_t{"printInteger", vo_t, {i32_t}},
+	signature_t{"printBoolean", vo_t, {i1_t}},
+	signature_t{"inputInteger", i32_t, {}},
+	signature_t{"inputBoolean", i1_t, {}}
+  };
+  std::for_each( internals.begin(), internals.end(), declarator_f );
 
   // ենթածրագրերի կոդի գեներացիա
   for( auto& f : funcs )
