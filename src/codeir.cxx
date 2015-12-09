@@ -18,6 +18,10 @@ namespace {
 
   llvm::IRBuilder<> builder{context};
 
+  const auto vo_t = builder.getVoidTy();
+  const auto i32_t = builder.getInt32Ty();
+  const auto i1_t = builder.getInt1Ty();
+
   llvm::Module* curMod = nullptr;
   llvm::Function* curFunc = nullptr;
 
@@ -47,12 +51,24 @@ namespace {
   }
 }
 
-
+//
 llvm::Module* ast::Module::code()
 {
   auto _m = new llvm::Module{name, context};
   curMod = _m;
 
+  // ներդրված ֆունկցիաների հայտարարություններ 
+  // TODO հետագայում ձևափոխել
+  auto _t = llvm::FunctionType::get(vo_t, {i32_t}, false);
+  llvm::Function::Create(_t, llvm::Function::ExternalLinkage, "printInteger", _m);
+  _t = llvm::FunctionType::get(vo_t, {i1_t}, false);
+  llvm::Function::Create(_t, llvm::Function::ExternalLinkage, "printBoolean", _m);
+  _t = llvm::FunctionType::get(i32_t, {}, false);
+  llvm::Function::Create(_t, llvm::Function::ExternalLinkage, "inputInteger", _m);
+  _t = llvm::FunctionType::get(i1_t, {}, false);
+  llvm::Function::Create(_t, llvm::Function::ExternalLinkage, "inputBoolean", _m);
+
+  // ենթածրագրերի կոդի գեներացիա
   for( auto& f : funcs )
 	f->code();
 
@@ -193,12 +209,35 @@ void ast::For::code()
 //
 void ast::Print::code()
 {
-  //
+  llvm::Function* _f = nullptr;
+
+  for( auto e : exprs ) {
+	auto _v = e->code();
+	if( _v->getType()->isIntegerTy(32) )
+	  _f = curMod->getFunction("printInteger");
+	else if( _v->getType()->isIntegerTy(1) )
+	  _f = curMod->getFunction("printBoolean");
+
+	builder.CreateCall(_f, {_v});
+	// TODO լրացնել
+  } 
 }
 
 //
 void ast::Input::code()
 {
+  llvm::Function* _f = nullptr;
+
+  auto _v = curLocs[variable];
+  auto _t = _v->getType()->getPointerElementType();
+
+  if( _t->isIntegerTy(32) )
+	_f = curMod->getFunction("inputInteger");
+  else if( _t->isIntegerTy(1) )
+ 	_f = curMod->getFunction("inputBoolean");
+
+  auto _r = builder.CreateCall(_f, {});
+  builder.CreateStore(_r, _v);
 }
 
 // 
