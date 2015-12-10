@@ -2,13 +2,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-extern void f(bool,bool);
+extern void f();
 
 int main()
 {
-  bool x = true;
-  bool y = false;
-  f(x, y);
+  f();
 
   return 0;
 }

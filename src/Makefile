@@ -6,4 +6,7 @@ LIBS=-L/home/armenba/llvm-3.7/lib -lLLVMCore -lLLVMSupport -lrt -ldl -lpthread -
 all:
 	clang++ $(CXXFLAGS) *.cxx $(LIBS)
 
+lib:
+	clang -S -emit-llvm internals.c
+
 

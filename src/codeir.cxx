@@ -62,18 +62,14 @@ llvm::Module* ast::Module::code()
   curMod = _m;
 
   // ներդրված ֆունկցիաների հայտարարություններ 
-  using signature_t = std::tuple<std::string,llvm::Type*,llvm::ArrayRef<llvm::Type*>>;
-  auto declarator_f = [&](signature_t s) {
-	auto _t = llvm::FunctionType::get(std::get<1>(s), std::get<2>(s), false);
-	llvm::Function::Create(_t, llvm::Function::ExternalLinkage, std::get<0>(s), _m);
+  auto declare_f = [&](std::string n, llvm::Type* r, llvm::ArrayRef<llvm::Type*> p) {
+	auto _t = llvm::FunctionType::get(r, p, false);
+	llvm::Function::Create(_t, llvm::Function::ExternalLinkage, n, _m);
   };	
-  llvm::SmallVector<signature_t,16> internals{
-	signature_t{"printInteger", vo_t, {i32_t}},
-	signature_t{"printBoolean", vo_t, {i1_t}},
-	signature_t{"inputInteger", i32_t, {}},
-	signature_t{"inputBoolean", i1_t, {}}
-  };
-  std::for_each( internals.begin(), internals.end(), declarator_f );
+  declare_f( "printInteger", vo_t, {i32_t} );
+  declare_f( "printBoolean", vo_t, {i1_t} );
+  declare_f( "inputInteger", i32_t, {} );
+  declare_f( "inputBoolean", i1_t, {} );
 
   // ենթածրագրերի կոդի գեներացիա
   for( auto& f : funcs )
