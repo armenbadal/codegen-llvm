@@ -1,5 +1,5 @@
 
-extern int inputInteger();
+extern int inputInteger(void);
 extern void printInteger(int);
 
 void f()

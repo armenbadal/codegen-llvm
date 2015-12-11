@@ -12,7 +12,7 @@
 
 int main()
 {
-  auto mod = new ast::Module{"Test0"};
+  auto mod = new ast::Module{"ex9.ll"};
 
   // auto s0 = new ast::Declare{"z", "INTEGER"};
   // auto e0 = new ast::Binary{"ADD", new ast::Variable{"x"}, new ast::Variable{"y"}};
@@ -61,7 +61,7 @@ int main()
   mod->code()->dump();
 
 
-  std::ofstream sout{"a.ll"};
+  std::ofstream sout{"ex9.ll"};
   llvm::raw_os_ostream roo{sout};
   auto pmp = llvm::createPrintModulePass(roo, "");
   llvm::legacy::PassManager pm;
