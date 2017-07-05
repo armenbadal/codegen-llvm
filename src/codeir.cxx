@@ -18,8 +18,9 @@
 #include "ast.hxx"
 
 namespace {
-  auto& context = llvm::getGlobalContext();
-
+  ///auto& context = llvm::getGlobalContext();
+  llvm::LLVMContext context;
+  
   llvm::IRBuilder<> builder{context};
 
   const auto vo_t = builder.getVoidTy();
@@ -33,12 +34,12 @@ namespace {
 
   void PlaceBlock( llvm::BasicBlock* bl )
   {
-	builder.ClearInsertionPoint();
-	auto _ib = builder.GetInsertBlock();
-	if( nullptr != _ib && nullptr != _ib->getParent() )
-	  curFunc->getBasicBlockList().insertAfter(_ib, bl);
-	else
-	  curFunc->getBasicBlockList().push_back(bl);
+    builder.ClearInsertionPoint();
+    auto _ib = builder.GetInsertBlock();
+    if( nullptr != _ib && nullptr != _ib->getParent() )
+      curFunc->getBasicBlockList().insertAfter(_ib->getIterator(), bl);
+    else
+      curFunc->getBasicBlockList().push_back(bl);
   }
 }
 
@@ -93,12 +94,12 @@ llvm::Function* ast::Function::code()
   auto _b0 = llvm::BasicBlock::Create(context, "", _f);
   builder.SetInsertPoint(_b0);
 
-  auto& _st = _f->getValueSymbolTable();
+  auto _st = _f->getValueSymbolTable();
   auto ip = _f->arg_begin();
   for( auto& p : params ) {
 	ip->setName(p.first);
 	auto _m = builder.CreateAlloca(ip->getType());
-	builder.CreateStore(_st.lookup(p.first), _m);
+	builder.CreateStore(_st->lookup(p.first), _m);
 	curLocs[p.first] = _m;
 	++ip;
   }
